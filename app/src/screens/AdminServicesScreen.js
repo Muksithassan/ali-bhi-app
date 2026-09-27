@@ -13,8 +13,9 @@ export default function AdminServicesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // New Service State
-  const [newService, setNewService] = useState({ name: '', description: '', price: '', category: 'General' });
+  // New Service State - field names must match the Service model
+  // (name, subtitle, basePrice, category: 'ac' | 'hvac' | 'general').
+  const [newService, setNewService] = useState({ name: '', subtitle: '', basePrice: '', category: 'ac' });
   
   // Animations
   const fabScale = useRef(new Animated.Value(1)).current;
@@ -59,22 +60,26 @@ export default function AdminServicesScreen() {
   const handleFabPressOut = () => Animated.spring(fabScale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
 
   const handleSaveService = async () => {
-    if (!newService.name || !newService.price) {
+    if (!newService.name || !newService.basePrice) {
       Alert.alert('Error', 'Name and Price are required');
       return;
     }
     try {
       const res = await api.post('/services', {
-        ...newService,
-        price: Number(newService.price)
+        name: newService.name,
+        subtitle: newService.subtitle,
+        basePrice: Number(newService.basePrice),
+        category: newService.category,
+        // Only AC work should ask the customer for AC type/units.
+        requiresAcDetails: newService.category !== 'general',
       });
       if (res.data.success) {
         closeModal();
-        setNewService({ name: '', description: '', price: '', category: 'General' });
+        setNewService({ name: '', subtitle: '', basePrice: '', category: 'ac' });
         fetchServices();
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to add service');
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to add service');
     }
   };
 
@@ -133,10 +138,10 @@ export default function AdminServicesScreen() {
                     <Ionicons name="trash-outline" size={20} color="#FF4757" />
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.serviceDesc}>{service.description || 'No description'}</Text>
+                <Text style={styles.serviceDesc}>{service.subtitle || 'No description'}</Text>
                 
                 <View style={styles.bottomRow}>
-                  <Text style={styles.servicePrice}>Rs {service.price}</Text>
+                  <Text style={styles.servicePrice}>Rs {service.basePrice}</Text>
                 </View>
               </View>
             </Animated.View>
@@ -186,8 +191,8 @@ export default function AdminServicesScreen() {
                 style={styles.input} 
                 placeholder="Details of the service" 
                 placeholderTextColor="#AAA" 
-                value={newService.description}
-                onChangeText={(t) => setNewService({...newService, description: t})}
+                value={newService.subtitle}
+                onChangeText={(t) => setNewService({...newService, subtitle: t})}
               />
             </View>
 
@@ -198,9 +203,26 @@ export default function AdminServicesScreen() {
                 placeholder="1500" 
                 keyboardType="numeric" 
                 placeholderTextColor="#AAA" 
-                value={newService.price}
-                onChangeText={(t) => setNewService({...newService, price: t})}
+                value={newService.basePrice}
+                onChangeText={(t) => setNewService({...newService, basePrice: t})}
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Category</Text>
+              <View style={styles.categoryRow}>
+                {[{ key: 'ac', label: 'AC' }, { key: 'hvac', label: 'HVAC' }, { key: 'general', label: 'General' }].map((c) => (
+                  <TouchableOpacity
+                    key={c.key}
+                    style={[styles.categoryChip, newService.category === c.key && styles.categoryChipActive]}
+                    onPress={() => setNewService({ ...newService, category: c.key })}
+                  >
+                    <Text style={[styles.categoryChipText, newService.category === c.key && styles.categoryChipTextActive]}>
+                      {c.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             <TouchableOpacity style={styles.saveBtn} onPress={handleSaveService}>
@@ -374,6 +396,31 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  categoryChip: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F7F9FC',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  categoryChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  categoryChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+  },
+  categoryChipTextActive: {
+    color: '#FFF',
   },
   saveBtn: {
     backgroundColor: colors.primary,

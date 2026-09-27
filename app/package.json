@@ -12,6 +12,7 @@
     "axios": "^1.20.0",
     "expo": "~57.0.24",
     "expo-auth-session": "~57.0.13",
+    "expo-build-properties": "~57.0.22",
     "expo-crypto": "~57.0.3",
     "expo-device": "^57.0.2",
     "expo-linear-gradient": "~57.0.1",

@@ -39,7 +39,7 @@ export default function CustomerServicesScreen({ navigation }) {
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.serviceTitle}>{item.name}</Text>
-        <Text style={styles.serviceSub}>{item.description || 'Professional Service'}</Text>
+        <Text style={styles.serviceSub}>{item.subtitle || 'Professional Service'}</Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color="#A0AEC0" />
     </TouchableOpacity>

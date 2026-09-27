@@ -27,3 +27,13 @@ export const GOOGLE_WEB_CLIENT_ID =
 export const IS_LOCAL_API = /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(
   API_URL
 );
+
+// A build shipped to users must never point at a machine on the developer's
+// Wi-Fi - nobody else could ever reach it. Shout about it instead of failing
+// silently with "server not reachable" on every request.
+if (typeof __DEV__ !== 'undefined' && !__DEV__ && IS_LOCAL_API) {
+  console.warn(
+    `[env] This release build points at a local API (${API_URL}). ` +
+      'Set EXPO_PUBLIC_API_URL to your deployed server, e.g. https://<your-service>.onrender.com/api, then rebuild.'
+  );
+}

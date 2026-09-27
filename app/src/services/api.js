@@ -2,9 +2,14 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, IS_LOCAL_API } from '../config/env';
 
+// A free hosting tier (Render/Railway) sleeps after a period of inactivity and
+// can take up to a minute to wake up, so the timeout has to be generous.
+// Anything shorter shows a false "server not reachable" on the first request.
+export const REQUEST_TIMEOUT_MS = 60000;
+
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 // Intercept requests to add the Auth token
@@ -29,10 +34,18 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const base = `Server is not reachable at ${API_URL}.`;
+    const timedOut =
+      error.code === 'ECONNABORTED' ||
+      error.code === 'ETIMEDOUT' ||
+      /timeout/i.test(error.message || '');
+
+    const base = timedOut
+      ? `The server at ${API_URL} did not respond within ${Math.round(REQUEST_TIMEOUT_MS / 1000)}s.`
+      : `Server is not reachable at ${API_URL}.`;
+
     const hint = IS_LOCAL_API
-      ? 'Make sure the backend is running on your PC, your phone is on the same Wi-Fi, and the port is not blocked by the firewall.'
-      : 'Please check your internet connection and try again.';
+      ? 'Check that the backend is running (npm run dev inside server/), that your phone is on the same Wi-Fi as the PC, and that Windows Firewall allows inbound TCP on that port.'
+      : `If this is a free hosting plan the server may be waking up - open ${API_URL.replace(/\/api\/?$/, '')}/health in a browser and try again.`;
 
     error.friendlyMessage = `${base} ${hint}`;
     return Promise.reject(error);
