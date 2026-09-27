@@ -14,6 +14,10 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Health check for hosting platforms (Render, etc.)
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', uptime: process.uptime() }));
+app.get('/', (req, res) => res.status(200).send('Ali Cool Point API is running'));
+
 // Routes
 app.use('/api', routes);
 
